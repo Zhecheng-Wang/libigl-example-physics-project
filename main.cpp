@@ -1,7 +1,9 @@
-#include <igl/viewer/Viewer.h>
+#include <igl/opengl/glfw/Viewer.h>
 #include <thread>
 #include "PhysicsHook.h"
 #include "ExampleHook.h"
+#include <igl/opengl/glfw/imgui/ImGuiMenu.h>
+#include <igl/opengl/glfw/imgui/ImGuiHelpers.h>
 
 static PhysicsHook *hook = NULL;
 
@@ -24,7 +26,7 @@ void resetSimulation()
     hook->reset();
 }
 
-bool drawCallback(igl::viewer::Viewer &viewer)
+bool drawCallback(igl::opengl::glfw::Viewer &viewer)
 {
     if (!hook)
         return false;
@@ -33,7 +35,7 @@ bool drawCallback(igl::viewer::Viewer &viewer)
     return false;
 }
 
-bool keyCallback(igl::viewer::Viewer& viewer, unsigned int key, int modifiers)
+bool keyCallback(igl::opengl::glfw::Viewer &viewer, unsigned int key, int modifiers)
 {
     if (key == ' ')
     {
@@ -43,26 +45,48 @@ bool keyCallback(igl::viewer::Viewer& viewer, unsigned int key, int modifiers)
     return false;
 }
 
-bool initGUI(igl::viewer::Viewer &viewer)
+bool mouseCallback(igl::opengl::glfw::Viewer &viewer, int button, int modifier)
 {
-    viewer.ngui->addButton("Run/Pause Sim", toggleSimulation);
-    viewer.ngui->addButton("Reset Sim", resetSimulation);
-    hook->initGUI(viewer);
-    viewer.screen->performLayout();
+    Eigen::Vector3f pos(viewer.down_mouse_x, viewer.down_mouse_y, 0);
+    Eigen::Matrix4f model = viewer.core.view*viewer.core.model;
+    Eigen::Vector3f unproj = igl::unproject(pos, model, viewer.core.proj, viewer.core.viewport);
+    hook->mouseClicked(unproj[0], -unproj[1], button);
+    return true;
+}
+
+bool drawGUI(igl::opengl::glfw::imgui::ImGuiMenu &menu)
+{
+    if (ImGui::CollapsingHeader("Simulation Control", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        if (ImGui::Button("Run/Pause Sim", ImVec2(-1, 0)))
+        {
+            toggleSimulation();
+        }
+        if (ImGui::Button("Reset Sim", ImVec2(-1, 0)))
+        {
+            resetSimulation();
+        }
+    }
+    hook->drawGUI(menu);
     return false;
 }
 
 int main(int argc, char *argv[])
 {
-  igl::viewer::Viewer viewer;
+    igl::opengl::glfw::Viewer viewer;
 
-  hook = new ExampleHook();
-  hook->reset();
+    hook = new ExampleHook();
+    hook->reset();
 
-  viewer.data.set_face_based(true);
-  viewer.core.is_animating = true;
-  viewer.callback_key_pressed = keyCallback;
-  viewer.callback_pre_draw = drawCallback;
-  viewer.callback_init = initGUI;
-  viewer.launch();
+    viewer.data().set_face_based(true);
+    viewer.core.is_animating = true;
+    viewer.callback_key_pressed = keyCallback;
+    viewer.callback_pre_draw = drawCallback;
+
+    igl::opengl::glfw::imgui::ImGuiMenu menu;
+    viewer.plugins.push_back(&menu);
+
+    menu.callback_draw_viewer_menu = [&]() {drawGUI(menu); };
+
+    viewer.launch();
 }

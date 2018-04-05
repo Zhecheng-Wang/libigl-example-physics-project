@@ -5,7 +5,7 @@ class ExampleHook : public PhysicsHook
 public:
     ExampleHook() : PhysicsHook() {}
 
-    virtual void initGUI(igl::viewer::Viewer &viewer)
+    virtual void drawGUI(igl::opengl::glfw::imgui::ImGuiMenu &menu)
     {
 
     }
@@ -42,9 +42,9 @@ public:
         return false;
     }
 
-    virtual void renderRenderGeometry(igl::viewer::Viewer &viewer)
+    virtual void renderRenderGeometry(igl::opengl::glfw::Viewer &viewer)
     {
-        viewer.data.set_mesh(renderQ, renderF);
+        viewer.data().set_mesh(renderQ, renderF);
     }
 
 private:
