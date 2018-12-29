@@ -48,7 +48,7 @@ bool keyCallback(igl::opengl::glfw::Viewer &viewer, unsigned int key, int modifi
 bool mouseCallback(igl::opengl::glfw::Viewer &viewer, int button, int modifier)
 {
     Eigen::Vector3f pos(viewer.down_mouse_x, viewer.down_mouse_y, 0);
-    Eigen::Matrix4f model = viewer.core.view*viewer.core.model;
+    Eigen::Matrix4f model = viewer.core.view;
     Eigen::Vector3f unproj = igl::unproject(pos, model, viewer.core.proj, viewer.core.viewport);
     hook->mouseClicked(unproj[0], -unproj[1], button);
     return true;
